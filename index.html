@@ -500,7 +500,7 @@ body{
 </div>
 
 <script>
-const API = 'https://text.pollinations.ai/';
+const API = 'https://text.pollinations.ai/openai';
 const MODEL = 'openai';
 
 // ─── State ───
@@ -666,7 +666,7 @@ RULES:
         signal: AbortSignal.timeout(60000)
       });
       const data = await res.json();
-      reply = data.choices?.[0]?.message?.content || '';
+      reply = data.choices?.[0]?.message?.content || data.content || (typeof data === 'string' ? data : '') || '';
       if(reply) break;
     } catch(e) {
       console.error('Attempt ' + (attempt+1) + ' failed:', e);
