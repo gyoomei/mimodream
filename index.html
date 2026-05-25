@@ -501,7 +501,7 @@ body{
 
 <script>
 const API = 'https://text.pollinations.ai/';
-const MODEL = 'openai-fast';
+const MODEL = 'openai';
 
 // ─── State ───
 let state = {
@@ -649,23 +649,32 @@ RULES:
 - Keep total response under 400 words
 - Use emojis for visual clarity`;
 
-  try {
-    const res = await fetch(API, {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({
-        model: MODEL,
-        messages: [
-          {role:'system', content: systemPrompt},
-          {role:'user', content: text}
-        ],
-        stream: false
-      }),
-      signal: AbortSignal.timeout(60000)
-    });
-    const data = await res.json();
-    const reply = data.choices?.[0]?.message?.content || 'Could not interpret this dream. Please try again with more detail.';
-    body.innerHTML = formatInterpretation(reply);
+  let reply = '';
+  for(let attempt = 0; attempt < 3; attempt++){
+    try {
+      const res = await fetch(API, {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          model: MODEL,
+          messages: [
+            {role:'system', content: systemPrompt},
+            {role:'user', content: text}
+          ],
+          stream: false
+        }),
+        signal: AbortSignal.timeout(60000)
+      });
+      const data = await res.json();
+      reply = data.choices?.[0]?.message?.content || '';
+      if(reply) break;
+    } catch(e) {
+      console.error('Attempt ' + (attempt+1) + ' failed:', e);
+      if(attempt < 2) await new Promise(r => setTimeout(r, 3000));
+    }
+  }
+  if(!reply) reply = '⚠️ Could not connect to AI. Please try again in a moment.';
+  body.innerHTML = formatInterpretation(reply);
 
     // Extract symbols for journal
     const symbols = [];
@@ -695,10 +704,6 @@ RULES:
     // Draw dream map
     drawDreamMap(symbols, text);
 
-  } catch(e) {
-    body.innerHTML = '⚠️ Connection error. Please try again.';
-    console.error(e);
-  }
   btn.disabled = false;
   btn.textContent = '🔮 Interpret Dream';
 }
