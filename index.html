@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#060612">
+<title>MiMoDream — AI Dream Interpreter</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌙</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Nunito:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #060612; --bg2: rgba(8,8,20,.9); --bg3: #0c0c1e;
+  --surface: rgba(16,16,40,.7); --surface2: rgba(24,24,55,.55);
+  --border: rgba(255,255,255,.06); --border2: rgba(255,255,255,.1);
+  --text: #e8e6f0; --text2: #9896b0; --text3: #6a688a;
+  --accent: #c4a0ff; --accent2: #a78bfa; --accent3: #8b5cf6;
+  --accent-deep: #7c3aed; --accent-glow: rgba(167,139,250,.1);
+  --gold: #f0d78c; --gold-dim: rgba(240,215,140,.12);
+  --teal: #5eead4; --rose: #fda4af; --sky: #7dd3fc;
+  --green: #86efac; --red: #fca5a5;
+  --radius: 16px; --radius-sm: 10px; --radius-lg: 22px;
+  --font: 'Nunito', system-ui, sans-serif;
+  --font-display: 'Cormorant Garamond', Georgia, serif;
+  --mono: 'JetBrains Mono', monospace;
+  --grad-main: linear-gradient(135deg, #a78bfa, #c084fc, #e879f9);
+  --grad-gold: linear-gradient(135deg, #f0d78c, #fbbf24, #f59e0b);
+  --shadow: 0 8px 32px rgba(0,0,0,.4);
+}
+[data-theme="light"] {
+  --bg: #f8f7fc; --bg2: rgba(248,247,252,.94); --bg3: #ffffff;
+  --surface: rgba(255,255,255,.88); --surface2: rgba(240,238,252,.7);
+  --border: rgba(0,0,0,.06); --border2: rgba(0,0,0,.1);
+  --text: #1a1830; --text2: #6b6889; --text3: #9c98b4;
+  --accent-glow: rgba(124,58,237,.06);
+  --shadow: 0 8px 32px rgba(0,0,0,.06);
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html{height:100%;overflow:hidden}
+body{
+  font-family:var(--font);background:var(--bg);color:var(--text);
+  height:100%;overflow:hidden;display:flex;flex-direction:column;
+  -webkit-font-smoothing:antialiased;
+}
+::selection{background:var(--accent-deep);color:#fff}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+
+/* ─── Starfield BG ─── */
+.stars{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.stars span{
+  position:absolute;width:2px;height:2px;border-radius:50%;
+  background:#fff;animation:twinkle 4s ease-in-out infinite alternate;
+}
+.stars span:nth-child(1){top:8%;left:12%;animation-delay:0s;width:3px;height:3px;opacity:.6}
+.stars span:nth-child(2){top:15%;left:45%;animation-delay:-1s;opacity:.4}
+.stars span:nth-child(3){top:25%;left:78%;animation-delay:-2s;width:2px;height:2px;opacity:.5}
+.stars span:nth-child(4){top:40%;left:30%;animation-delay:-0.5s;opacity:.3}
+.stars span:nth-child(5){top:55%;left:65%;animation-delay:-3s;width:3px;height:3px;opacity:.5}
+.stars span:nth-child(6){top:70%;left:20%;animation-delay:-1.5s;opacity:.35}
+.stars span:nth-child(7){top:80%;left:50%;animation-delay:-2.5s;opacity:.45}
+.stars span:nth-child(8){top:10%;left:88%;animation-delay:-0.8s;width:2px;height:2px;opacity:.3}
+.stars span:nth-child(9){top:60%;left:90%;animation-delay:-3.5s;opacity:.25}
+.stars span:nth-child(10){top:35%;left:5%;animation-delay:-1.2s;width:3px;height:3px;opacity:.4}
+@keyframes twinkle{0%{opacity:.15;transform:scale(.8)}100%{opacity:.7;transform:scale(1.2)}}
+
+/* ─── Nebula Glow ─── */
+.nebula{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.nebula .cloud{
+  position:absolute;border-radius:50%;filter:blur(100px);
+  animation:nebulaDrift 25s ease-in-out infinite;
+}
+.nebula .cloud:nth-child(1){
+  width:500px;height:500px;
+  background:radial-gradient(circle,rgba(124,58,237,.18),transparent 70%);
+  top:-10%;left:10%;animation-delay:0s;
+}
+.nebula .cloud:nth-child(2){
+  width:400px;height:400px;
+  background:radial-gradient(circle,rgba(232,121,249,.12),transparent 70%);
+  top:50%;right:-5%;animation-delay:-10s;
+}
+.nebula .cloud:nth-child(3){
+  width:350px;height:350px;
+  background:radial-gradient(circle,rgba(94,234,212,.08),transparent 70%);
+  bottom:-5%;left:30%;animation-delay:-18s;
+}
+@keyframes nebulaDrift{
+  0%,100%{transform:translate(0,0) scale(1)}
+  33%{transform:translate(30px,-40px) scale(1.05)}
+  66%{transform:translate(-20px,30px) scale(.95)}
+}
+[data-theme="light"] .nebula .cloud{opacity:.3}
+
+/* ─── Layout ─── */
+.app{display:flex;flex-direction:column;height:100%;position:relative;z-index:1;overflow:hidden}
+
+/* ─── Nav ─── */
+.nav{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 20px;background:var(--bg2);
+  border-bottom:1px solid var(--border);flex-shrink:0;
+  backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);
+}
+.logo{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.logo-icon{
+  width:34px;height:34px;border-radius:10px;
+  background:linear-gradient(135deg,#7c3aed,#a78bfa,#c084fc);
+  display:flex;align-items:center;justify-content:center;
+  font-size:1rem;box-shadow:0 4px 16px rgba(124,58,237,.3);
+}
+.logo-text{
+  font-family:var(--font-display);font-size:1.3rem;font-weight:600;
+  letter-spacing:-.01em;
+  background:var(--grad-main);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.nav-tabs{display:flex;gap:3px;margin-left:12px;overflow-x:auto;scrollbar-width:none;flex-shrink:1;min-width:0}
+.nav-tabs::-webkit-scrollbar{display:none}
+.nav-tab{
+  padding:6px 14px;border-radius:20px;
+  border:1px solid var(--border);
+  background:transparent;color:var(--text2);
+  cursor:pointer;font-size:.76rem;font-weight:600;
+  font-family:var(--font);transition:all .25s;
+  white-space:nowrap;flex-shrink:0;
+}
+.nav-tab:hover{border-color:var(--accent2);color:var(--accent)}
+.nav-tab.active{
+  background:var(--accent-deep);color:#fff;
+  border-color:var(--accent-deep);
+  box-shadow:0 2px 12px rgba(124,58,237,.3);
+}
+.spacer{flex:1;min-width:0}
+.icon-btn{
+  width:34px;height:34px;border-radius:var(--radius-sm);
+  border:1px solid var(--border);background:transparent;
+  color:var(--text2);cursor:pointer;display:flex;
+  align-items:center;justify-content:center;font-size:.9rem;
+  transition:all .2s;flex-shrink:0;
+}
+.icon-btn:hover{background:var(--accent-glow);color:var(--accent);border-color:rgba(167,139,250,.15)}
+
+/* ─── Content Area ─── */
+.content{flex:1;overflow-y:auto;overflow-x:hidden}
+
+/* ─── Tab: Interpret ─── */
+.tab-panel{display:none;height:100%;flex-direction:column}
+.tab-panel.active{display:flex}
+
+.interpret-panel{padding:24px;display:flex;flex-direction:column;gap:20px;flex:1;overflow-y:auto}
+
+/* Dream Input Card */
+.dream-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius-lg);padding:24px;
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  position:relative;overflow:hidden;
+}
+.dream-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:var(--grad-main);opacity:.6;
+}
+.dream-card h2{
+  font-family:var(--font-display);font-size:1.5rem;font-weight:600;
+  margin-bottom:4px;letter-spacing:-.01em;color:var(--text);
+}
+.dream-card .subtitle{
+  font-size:.82rem;color:var(--text2);margin-bottom:16px;
+}
+.dream-textarea{
+  width:100%;min-height:120px;max-height:300px;padding:14px 16px;
+  border-radius:var(--radius);border:1px solid var(--border);
+  background:var(--surface2);color:var(--text);
+  font-family:var(--font);font-size:.88rem;
+  resize:vertical;outline:none;line-height:1.65;
+  transition:border-color .25s,box-shadow .25s;
+}
+.dream-textarea:focus{
+  border-color:var(--accent2);
+  box-shadow:0 0 0 3px rgba(167,139,250,.1);
+}
+.dream-textarea::placeholder{color:var(--text3)}
+
+.dream-options{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;align-items:center}
+.mood-select{display:flex;gap:4px;flex-wrap:wrap}
+.mood-btn{
+  padding:5px 12px;border-radius:20px;
+  border:1px solid var(--border);background:transparent;
+  color:var(--text2);cursor:pointer;font-size:.75rem;
+  font-family:var(--font);font-weight:600;transition:all .2s;
+}
+.mood-btn:hover{border-color:var(--accent2);color:var(--accent)}
+.mood-btn.active{background:var(--accent-deep);color:#fff;border-color:var(--accent-deep)}
+
+.analyze-btn{
+  padding:12px 28px;border-radius:28px;border:none;
+  background:var(--grad-main);color:#fff;
+  font-family:var(--font-display);font-size:1rem;font-weight:600;
+  letter-spacing:.02em;cursor:pointer;
+  transition:transform .2s,box-shadow .2s;
+  box-shadow:0 4px 20px rgba(124,58,237,.3);
+  position:relative;overflow:hidden;
+}
+.analyze-btn::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.2),transparent);
+  transform:translateX(-100%);transition:transform .5s;
+}
+.analyze-btn:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(124,58,237,.4)}
+.analyze-btn:hover::before{transform:translateX(100%)}
+.analyze-btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.analyze-btn:disabled::before{display:none}
+
+/* Result Area */
+.result-area{display:none;flex-direction:column;gap:16px}
+.result-area.show{display:flex}
+
+/* Interpretation Card */
+.interp-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius-lg);padding:24px;
+  backdrop-filter:blur(16px);position:relative;overflow:hidden;
+  animation:fadeUp .4s cubic-bezier(.16,1,.3,1);
+}
+.interp-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,var(--accent3),var(--gold),var(--teal));
+  opacity:.5;
+}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+.interp-header{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.interp-icon{
+  width:40px;height:40px;border-radius:12px;
+  background:linear-gradient(135deg,rgba(124,58,237,.2),rgba(232,121,249,.15));
+  display:flex;align-items:center;justify-content:center;font-size:1.2rem;
+}
+.interp-title{
+  font-family:var(--font-display);font-size:1.2rem;font-weight:600;
+  background:var(--grad-main);-webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.interp-body{font-size:.88rem;line-height:1.75;color:var(--text)}
+.interp-body .symbol{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:2px 10px;border-radius:12px;
+  background:var(--accent-glow);border:1px solid rgba(167,139,250,.15);
+  font-weight:600;font-size:.82rem;color:var(--accent);
+  margin:2px 2px;white-space:nowrap;
+}
+.interp-body .theme-tag{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:2px 10px;border-radius:12px;
+  background:var(--gold-dim);border:1px solid rgba(240,215,140,.15);
+  font-weight:600;font-size:.82rem;color:var(--gold);
+  margin:2px 2px;white-space:nowrap;
+}
+.interp-body .emotion-tag{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:2px 10px;border-radius:12px;
+  background:rgba(94,234,212,.08);border:1px solid rgba(94,234,212,.12);
+  font-weight:600;font-size:.82rem;color:var(--teal);
+  margin:2px 2px;white-space:nowrap;
+}
+.interp-section{margin-top:14px}
+.interp-section h4{
+  font-family:var(--font-display);font-size:1rem;font-weight:600;
+  color:var(--accent);margin-bottom:6px;
+}
+
+/* Dream Map Canvas */
+.dream-map-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius-lg);padding:20px;
+  backdrop-filter:blur(16px);overflow:hidden;
+}
+.dream-map-card h3{
+  font-family:var(--font-display);font-size:1.1rem;font-weight:600;
+  margin-bottom:12px;color:var(--text);
+}
+.dream-map-wrap{
+  width:100%;aspect-ratio:16/9;border-radius:var(--radius);
+  overflow:hidden;background:var(--bg3);position:relative;
+}
+#dreamMap{width:100%;height:100%}
+
+/* Typing */
+.typing{display:flex;gap:5px;padding:14px 18px}
+.typing span{
+  width:7px;height:7px;border-radius:50%;
+  background:var(--accent2);animation:typBounce .6s infinite alternate;
+}
+.typing span:nth-child(2){animation-delay:.2s}
+.typing span:nth-child(3){animation-delay:.4s}
+@keyframes typBounce{to{opacity:.3;transform:translateY(-5px)}}
+
+/* ─── Tab: Journal ─── */
+.journal-panel{padding:24px;overflow-y:auto}
+.journal-empty{
+  text-align:center;padding:60px 20px;color:var(--text2);
+}
+.journal-empty .icon{font-size:3rem;margin-bottom:12px}
+.journal-empty p{font-size:.9rem}
+
+.dream-entry{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:16px;
+  margin-bottom:10px;cursor:pointer;
+  transition:border-color .25s,transform .25s;
+  backdrop-filter:blur(8px);
+}
+.dream-entry:hover{border-color:var(--accent2);transform:translateY(-1px)}
+.dream-entry-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.dream-entry-date{font-size:.72rem;color:var(--text3);font-family:var(--mono)}
+.dream-entry-mood{font-size:.85rem}
+.dream-entry-text{
+  font-size:.84rem;color:var(--text2);line-height:1.5;
+  overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+}
+.dream-entry-tags{display:flex;gap:4px;margin-top:8px;flex-wrap:wrap}
+.dream-entry-tags span{
+  font-size:.65rem;padding:2px 8px;border-radius:10px;
+  background:var(--accent-glow);color:var(--accent2);
+  font-weight:600;
+}
+
+/* ─── Tab: Patterns ─── */
+.patterns-panel{padding:24px;overflow-y:auto}
+.pattern-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:16px;margin-bottom:10px;
+  backdrop-filter:blur(8px);
+}
+.pattern-card h4{
+  font-family:var(--font-display);font-size:1rem;font-weight:600;
+  color:var(--accent);margin-bottom:8px;
+}
+.symbol-bar{
+  display:flex;align-items:center;gap:8px;
+  margin-bottom:6px;font-size:.82rem;
+}
+.symbol-bar .name{width:100px;font-weight:600;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.symbol-bar .bar{
+  flex:1;height:8px;border-radius:4px;
+  background:var(--surface2);overflow:hidden;min-width:0;
+}
+.symbol-bar .bar-fill{
+  height:100%;border-radius:4px;
+  background:var(--grad-main);transition:width .6s ease;
+}
+.symbol-bar .count{
+  font-family:var(--mono);font-size:.72rem;color:var(--text3);
+  width:24px;text-align:right;flex-shrink:0;
+}
+
+/* ─── Tab: Dictionary ─── */
+.dict-panel{padding:24px;overflow-y:auto}
+.dict-search{
+  width:100%;padding:12px 16px;border-radius:var(--radius);
+  border:1px solid var(--border);background:var(--surface);
+  color:var(--text);font-family:var(--font);font-size:.88rem;
+  outline:none;margin-bottom:16px;
+  transition:border-color .25s;
+}
+.dict-search:focus{border-color:var(--accent2)}
+.dict-search::placeholder{color:var(--text3)}
+.dict-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
+.dict-item{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius-sm);padding:14px;
+  backdrop-filter:blur(8px);transition:border-color .2s;
+}
+.dict-item:hover{border-color:rgba(167,139,250,.15)}
+.dict-word{
+  font-family:var(--font-display);font-size:1.1rem;font-weight:600;
+  color:var(--accent);margin-bottom:4px;
+}
+.dict-meaning{font-size:.82rem;color:var(--text2);line-height:1.5}
+
+/* ─── Mobile ─── */
+@media(max-width:768px){
+  .nav{padding:8px 12px;gap:6px}
+  .logo-text{font-size:1.1rem}
+  .nav-tabs{margin-left:6px;gap:2px}
+  .nav-tab{padding:5px 10px;font-size:.72rem}
+  .interpret-panel{padding:16px;gap:14px}
+  .dream-card{padding:18px}
+  .dream-card h2{font-size:1.25rem}
+  .dream-textarea{min-height:100px;font-size:.85rem;padding:12px}
+  .interp-card{padding:18px}
+  .journal-panel,.patterns-panel,.dict-panel{padding:16px}
+  .dict-grid{grid-template-columns:1fr}
+}
+@media(max-width:480px){
+  .logo-text{display:none}
+  .dream-card h2{font-size:1.1rem}
+  .dream-options{flex-direction:column;align-items:stretch}
+  .mood-select{justify-content:center}
+  .analyze-btn{width:100%}
+}
+
+@media(prefers-reduced-motion:reduce){
+  .stars span,.nebula .cloud{animation:none!important}
+  .interp-card{animation:none!important}
+}
+
+@supports(padding-top:env(safe-area-inset-top)){
+  .nav{padding-top:max(10px,env(safe-area-inset-top))}
+}
+</style>
+</head>
+<body>
+
+<div class="stars"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+<div class="nebula"><div class="cloud"></div><div class="cloud"></div><div class="cloud"></div></div>
+
+<div class="app">
+  <nav class="nav">
+    <div class="logo">
+      <div class="logo-icon">🌙</div>
+      <span class="logo-text">MiMoDream</span>
+    </div>
+    <div class="nav-tabs">
+      <button class="nav-tab active" data-tab="interpret">🔮 Interpret</button>
+      <button class="nav-tab" data-tab="journal">📓 Journal</button>
+      <button class="nav-tab" data-tab="patterns">📊 Patterns</button>
+      <button class="nav-tab" data-tab="dictionary">📖 Dictionary</button>
+    </div>
+    <div class="spacer"></div>
+    <button class="icon-btn" id="themeBtn" aria-label="Toggle theme" title="Toggle theme">🌙</button>
+  </nav>
+
+  <div class="content">
+    <!-- Interpret Tab -->
+    <div class="tab-panel active" id="tab-interpret">
+      <div class="interpret-panel">
+        <div class="dream-card">
+          <h2>Describe Your Dream</h2>
+          <p class="subtitle">Write as much detail as you remember — symbols, emotions, colors, people, places</p>
+          <textarea class="dream-textarea" id="dreamInput" placeholder="I was walking through a dark forest. The trees had silver leaves and I could hear water flowing somewhere. A white owl appeared and led me to a clearing where there was a mirror..."></textarea>
+          <div class="dream-options">
+            <div class="mood-select">
+              <button class="mood-btn active" data-mood="neutral">😐 Neutral</button>
+              <button class="mood-btn" data-mood="scared">😨 Scared</button>
+              <button class="mood-btn" data-mood="happy">😊 Happy</button>
+              <button class="mood-btn" data-mood="sad">😢 Sad</button>
+              <button class="mood-btn" data-mood="confused">😵 Confused</button>
+              <button class="mood-btn" data-mood="lucid">✨ Lucid</button>
+            </div>
+            <div class="spacer"></div>
+            <button class="analyze-btn" id="analyzeBtn" onclick="analyzeDream()">🔮 Interpret Dream</button>
+          </div>
+        </div>
+
+        <div class="result-area" id="resultArea">
+          <div class="interp-card" id="interpCard">
+            <div class="interp-header">
+              <div class="interp-icon">🔮</div>
+              <div class="interp-title">Dream Interpretation</div>
+            </div>
+            <div class="interp-body" id="interpBody"></div>
+          </div>
+          <div class="dream-map-card">
+            <h3>🗺️ Dream Map</h3>
+            <div class="dream-map-wrap">
+              <canvas id="dreamMap"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Journal Tab -->
+    <div class="tab-panel" id="tab-journal">
+      <div class="journal-panel" id="journalList">
+        <div class="journal-empty">
+          <div class="icon">📓</div>
+          <p>Your dream journal is empty. Interpret a dream first to save it here.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Patterns Tab -->
+    <div class="tab-panel" id="tab-patterns">
+      <div class="patterns-panel" id="patternsList">
+        <div class="journal-empty">
+          <div class="icon">📊</div>
+          <p>Track recurring symbols and themes across your dreams.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dictionary Tab -->
+    <div class="tab-panel" id="tab-dictionary">
+      <div class="dict-panel">
+        <input class="dict-search" id="dictSearch" type="text" placeholder="Search dream symbols (water, flying, teeth, snake...)">
+        <div class="dict-grid" id="dictGrid"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = 'https://text.pollinations.ai/';
+const MODEL = 'openai-fast';
+
+// ─── State ───
+let state = {
+  mood: 'neutral',
+  dreams: JSON.parse(localStorage.getItem('mimodream_journal')||'[]'),
+  symbols: JSON.parse(localStorage.getItem('mimodream_symbols')||'{}'),
+};
+
+// ─── Theme ───
+const html = document.documentElement;
+function initTheme(){
+  const s = localStorage.getItem('mimodream_theme')||'dark';
+  html.dataset.theme = s;
+  document.getElementById('themeBtn').textContent = s==='dark'?'🌙':'☀️';
+  document.querySelector('meta[name="theme-color"]').content = s==='dark'?'#060612':'#f8f7fc';
+}
+initTheme();
+document.getElementById('themeBtn').onclick = ()=>{
+  const t = html.dataset.theme==='dark'?'light':'dark';
+  html.dataset.theme = t;
+  localStorage.setItem('mimodream_theme', t);
+  document.getElementById('themeBtn').textContent = t==='dark'?'🌙':'☀️';
+  document.querySelector('meta[name="theme-color"]').content = t==='dark'?'#060612':'#f8f7fc';
+};
+
+// ─── Tabs ───
+document.querySelectorAll('.nav-tab').forEach(tab=>{
+  tab.onclick = ()=>{
+    document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('tab-'+tab.dataset.tab).classList.add('active');
+    if(tab.dataset.tab==='journal') renderJournal();
+    if(tab.dataset.tab==='patterns') renderPatterns();
+    if(tab.dataset.tab==='dictionary') renderDictionary();
+  };
+});
+
+// ─── Mood ───
+document.querySelectorAll('.mood-btn').forEach(btn=>{
+  btn.onclick = ()=>{
+    document.querySelectorAll('.mood-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    state.mood = btn.dataset.mood;
+  };
+});
+
+// ─── Dream Dictionary ───
+const DREAM_DICT = {
+  water:{meaning:'Emotions, the unconscious mind, purification. Calm water = peace. Turbulent water = emotional turmoil.'},
+  flying:{meaning:'Freedom, ambition, desire to escape. Often appears when you feel empowered or渴望liberation from constraints.'},
+  falling:{meaning:'Loss of control, anxiety, fear of failure. Common during stressful transitions in life.'},
+  teeth:{meaning:'Anxiety about appearance, communication, or power. Losing teeth = fear of helplessness or aging.'},
+  snake:{meaning:'Transformation, hidden threats, healing. Can represent a toxic person or personal rebirth.'},
+  death:{meaning:'Endings and new beginnings. Rarely literal — usually signals transformation or letting go.'},
+  chase:{meaning:'Avoidance of a problem or emotion. The pursuer often represents what you\'re running from.'},
+  mirror:{meaning:'Self-reflection, identity, truth. What you see in the mirror reveals how you perceive yourself.'},
+  fire:{meaning:'Passion, destruction, transformation. Can signal anger, desire, or a powerful creative force.'},
+  ocean:{meaning:'The vast unconscious, mystery, overwhelming emotions. Depth of the ocean = depth of feeling.'},
+  house:{meaning:'The self — different rooms represent different aspects of your psyche. Attic = conscious, basement = subconscious.'},
+  tree:{meaning:'Growth, roots (family/past), branches (future possibilities). Dead tree = lost potential.'},
+  baby:{meaning:'New beginnings, vulnerability, unrealized potential. Can also represent a new project or idea.'},
+  bridge:{meaning:'Transition, connection between two phases of life. Crossing = moving forward.'},
+  door:{meaning:'Opportunity, transition, the unknown. Locked door = missed chance or hidden potential.'},
+  fog:{meaning:'Confusion, lack of clarity, hidden truth. Something in your life feels unclear.'},
+  moon:{meaning:'Femininity, intuition, cycles, hidden knowledge. Full moon = clarity. New moon = beginnings.'},
+  sun:{meaning:'Vitality, consciousness, success, masculine energy. A rising sun = new hope.'},
+  wolf:{meaning:'Instinct, loyalty, guardianship — or a threatening presence. Context determines which.'},
+  clock:{meaning:'Time pressure, mortality, urgency. A stopped clock = frozen in time or a pivotal moment.'},
+  maze:{meaning:'Feeling lost, complexity of a problem, search for direction. Finding the exit = resolution.'},
+  rain:{meaning:'Emotional release, cleansing, sadness, or renewal. Heavy rain = overwhelming feelings.'},
+  mountain:{meaning:'Challenge, ambition, achievement. Climbing = striving. Summit = success or perspective.'},
+  key:{meaning:'Access, answers, solutions. Finding a key = discovering a way forward or unlocking potential.'},
+  shadow:{meaning:'The Jungian shadow self — repressed aspects of personality, fears, or desires.'},
+  crown:{meaning:'Authority, achievement, self-worth. Wearing a crown = recognizing your own power.'},
+  blood:{meaning:'Life force, sacrifice, vitality. Losing blood = energy drain. Can signal deep emotional wounds.'},
+  cave:{meaning:'The unconscious, introspection, retreat. Entering a cave = exploring your inner world.'},
+  star:{meaning:'Hope, guidance, destiny. A shooting star = a fleeting opportunity or wish.'},
+  garden:{meaning:'Personal growth, beauty, cultivation of the self. A wild garden = untapped potential.'}
+};
+
+function renderDictionary(filter=''){
+  const grid = document.getElementById('dictGrid');
+  const entries = Object.entries(DREAM_DICT).filter(([k,v])=>{
+    if(!filter) return true;
+    return k.includes(filter.toLowerCase()) || v.meaning.toLowerCase().includes(filter.toLowerCase());
+  });
+  if(!entries.length){
+    grid.innerHTML = '<p style="color:var(--text2);grid-column:1/-1;text-align:center">No symbols found matching your search.</p>';
+    return;
+  }
+  grid.innerHTML = entries.map(([word, data])=>`
+    <div class="dict-item">
+      <div class="dict-word">${word}</div>
+      <div class="dict-meaning">${data.meaning}</div>
+    </div>
+  `).join('');
+}
+document.getElementById('dictSearch').oninput = (e)=> renderDictionary(e.target.value);
+renderDictionary();
+
+// ─── Analyze Dream ───
+async function analyzeDream(){
+  const text = document.getElementById('dreamInput').value.trim();
+  if(!text) return;
+  const btn = document.getElementById('analyzeBtn');
+  const result = document.getElementById('resultArea');
+  const body = document.getElementById('interpBody');
+
+  btn.disabled = true;
+  btn.textContent = '🔮 Interpreting...';
+  result.classList.remove('show');
+  body.innerHTML = '<div class="typing"><span></span><span></span><span></span></div>';
+  result.classList.add('show');
+
+  const systemPrompt = `You are MiMoDream, an AI dream interpreter powered by Xiaomi MiMo V2.5. You combine Jungian psychology, cultural symbolism, and modern dream analysis.
+
+The user's dream mood upon waking: ${state.mood}
+
+When interpreting, follow this EXACT format:
+
+🔮 **Dream Summary**
+[2-3 sentence overview of the dream's core message]
+
+🪞 **Key Symbols**
+For each major symbol, write: [emoji] **Symbol** — interpretation (1-2 sentences)
+List 3-5 key symbols.
+
+🌀 **Themes**
+Identify 2-3 overarching themes. Format: [emoji] **Theme** — explanation
+
+💧 **Emotional Undercurrent**
+[What emotions are beneath the surface? 2-3 sentences]
+
+🧭 **Guidance**
+[What is the dream suggesting? 2-3 sentences of actionable insight]
+
+⚡ **Vividness Score**
+Rate 1-10 and explain why.
+
+RULES:
+- Be poetic but grounded in psychology
+- Reference Jung, Freud, or cultural traditions when relevant
+- Don't be generic — connect directly to the specific details the user described
+- Keep total response under 400 words
+- Use emojis for visual clarity`;
+
+  try {
+    const res = await fetch(API, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model: MODEL,
+        messages: [
+          {role:'system', content: systemPrompt},
+          {role:'user', content: text}
+        ],
+        stream: false
+      }),
+      signal: AbortSignal.timeout(60000)
+    });
+    const data = await res.json();
+    const reply = data.choices?.[0]?.message?.content || 'Could not interpret this dream. Please try again with more detail.';
+    body.innerHTML = formatInterpretation(reply);
+
+    // Extract symbols for journal
+    const symbols = [];
+    const symMatches = reply.matchAll(/[🪞🌀🔮✨🌙🔥💧🌊🏠🌳🐍🔥🚪🐺⭐🎭💡🦅👑]\s*\*{0,2}([A-Z][a-z]+(?:\s[a-z]+)*)\*{0,2}/g);
+    for(const m of symMatches) symbols.push(m[1].trim());
+
+    // Save to journal
+    const entry = {
+      id: Date.now(),
+      date: new Date().toISOString(),
+      text: text.substring(0, 500),
+      mood: state.mood,
+      symbols: symbols.slice(0, 8),
+      interpretation: reply
+    };
+    state.dreams.unshift(entry);
+    if(state.dreams.length > 50) state.dreams = state.dreams.slice(0, 50);
+    localStorage.setItem('mimodream_journal', JSON.stringify(state.dreams));
+
+    // Update symbol frequency
+    symbols.forEach(s => {
+      const key = s.toLowerCase();
+      state.symbols[key] = (state.symbols[key]||0) + 1;
+    });
+    localStorage.setItem('mimodream_symbols', JSON.stringify(state.symbols));
+
+    // Draw dream map
+    drawDreamMap(symbols, text);
+
+  } catch(e) {
+    body.innerHTML = '⚠️ Connection error. Please try again.';
+    console.error(e);
+  }
+  btn.disabled = false;
+  btn.textContent = '🔮 Interpret Dream';
+}
+
+function formatInterpretation(text){
+  // Bold
+  text = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  // Section headers
+  text = text.replace(/^(🔮|🪞|🌀|💧|🧭|⚡)\s*(.+)/gm, '<div class="interp-section" style="margin-top:16px"><h4>$1 $2</h4></div>');
+  // Line breaks
+  text = text.replace(/\n/g, '<br>');
+  return text;
+}
+
+// ─── Dream Map (Canvas) ───
+function drawDreamMap(symbols, text){
+  const canvas = document.getElementById('dreamMap');
+  const wrap = canvas.parentElement;
+  canvas.width = wrap.offsetWidth * 2;
+  canvas.height = wrap.offsetHeight * 2;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(2, 2);
+  const w = wrap.offsetWidth;
+  const h = wrap.offsetHeight;
+
+  // Background
+  ctx.fillStyle = html.dataset.theme==='dark' ? '#08081a' : '#f0eef8';
+  ctx.fillRect(0, 0, w, h);
+
+  // Center = dream core
+  const cx = w/2, cy = h/2;
+  const nodes = [];
+  const emojis = ['🔮','🌙','⭐','🌊','🔥','🏠','🌳','🐍','🦋','👁️','💫','🎭','🕊️','🔑','🪞'];
+
+  // Place symbols in a circle
+  const unique = [...new Set(symbols.map(s=>s.toLowerCase()))].slice(0, 8);
+  const radius = Math.min(w, h) * 0.32;
+
+  unique.forEach((sym, i) => {
+    const angle = (i / unique.length) * Math.PI * 2 - Math.PI/2;
+    const x = cx + Math.cos(angle) * radius;
+    const y = cy + Math.sin(angle) * radius;
+    nodes.push({x, y, label: sym, emoji: emojis[i % emojis.length]});
+  });
+
+  // Draw connections
+  ctx.strokeStyle = html.dataset.theme==='dark' ? 'rgba(167,139,250,.15)' : 'rgba(124,58,237,.1)';
+  ctx.lineWidth = 1;
+  nodes.forEach(n => {
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(n.x, n.y);
+    ctx.stroke();
+    // Cross connections
+    nodes.forEach(n2 => {
+      if(n !== n2 && Math.random() > 0.5){
+        ctx.beginPath();
+        ctx.moveTo(n.x, n.y);
+        ctx.lineTo(n2.x, n2.y);
+        ctx.stroke();
+      }
+    });
+  });
+
+  // Draw center
+  const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, 35);
+  grad.addColorStop(0, 'rgba(167,139,250,.3)');
+  grad.addColorStop(1, 'rgba(167,139,250,0)');
+  ctx.fillStyle = grad;
+  ctx.beginPath(); ctx.arc(cx, cy, 35, 0, Math.PI*2); ctx.fill();
+
+  ctx.fillStyle = html.dataset.theme==='dark' ? '#fff' : '#1a1830';
+  ctx.font = '600 11px Nunito';
+  ctx.textAlign = 'center';
+  ctx.fillText('DREAM', cx, cy - 4);
+  ctx.fillText('CORE', cx, cy + 10);
+
+  // Draw nodes
+  nodes.forEach(n => {
+    // Glow
+    const g = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, 28);
+    g.addColorStop(0, 'rgba(240,215,140,.2)');
+    g.addColorStop(1, 'rgba(240,215,140,0)');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(n.x, n.y, 28, 0, Math.PI*2); ctx.fill();
+
+    // Node circle
+    ctx.fillStyle = html.dataset.theme==='dark' ? 'rgba(20,20,50,.8)' : 'rgba(255,255,255,.9)';
+    ctx.strokeStyle = html.dataset.theme==='dark' ? 'rgba(167,139,250,.3)' : 'rgba(124,58,237,.2)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.arc(n.x, n.y, 20, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+
+    // Emoji
+    ctx.font = '16px serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(n.emoji, n.x, n.y);
+
+    // Label
+    ctx.fillStyle = html.dataset.theme==='dark' ? '#c4a0ff' : '#7c3aed';
+    ctx.font = '600 10px Nunito';
+    ctx.textBaseline = 'top';
+    ctx.fillText(n.label, n.x, n.y + 24);
+  });
+}
+
+// ─── Journal ───
+function renderJournal(){
+  const el = document.getElementById('journalList');
+  if(!state.dreams.length){
+    el.innerHTML = '<div class="journal-empty"><div class="icon">📓</div><p>Your dream journal is empty. Interpret a dream first to save it here.</p></div>';
+    return;
+  }
+  const moodEmojis = {neutral:'😐',scared:'😨',happy:'😊',sad:'😢',confused:'😵',lucid:'✨'};
+  el.innerHTML = state.dreams.map(d=>`
+    <div class="dream-entry" onclick="viewDream(${d.id})">
+      <div class="dream-entry-header">
+        <span class="dream-entry-date">${new Date(d.date).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit'})}</span>
+        <span class="dream-entry-mood">${moodEmojis[d.mood]||'😐'}</span>
+      </div>
+      <div class="dream-entry-text">${d.text}</div>
+      ${d.symbols.length?`<div class="dream-entry-tags">${d.symbols.slice(0,5).map(s=>`<span>${s}</span>`).join('')}</div>`:''}
+    </div>
+  `).join('');
+}
+
+function viewDream(id){
+  const d = state.dreams.find(x=>x.id===id);
+  if(!d) return;
+  // Switch to interpret tab and show the interpretation
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelector('[data-tab="interpret"]').classList.add('active');
+  document.getElementById('tab-interpret').classList.add('active');
+
+  document.getElementById('dreamInput').value = d.text;
+  document.querySelectorAll('.mood-btn').forEach(b=>{
+    b.classList.toggle('active', b.dataset.mood===d.mood);
+  });
+  state.mood = d.mood;
+
+  const result = document.getElementById('resultArea');
+  const body = document.getElementById('interpBody');
+  body.innerHTML = formatInterpretation(d.interpretation);
+  result.classList.add('show');
+
+  if(d.symbols.length) drawDreamMap(d.symbols, d.text);
+}
+
+// ─── Patterns ───
+function renderPatterns(){
+  const el = document.getElementById('patternsList');
+  const entries = Object.entries(state.symbols).sort((a,b)=>b[1]-a[1]).slice(0, 20);
+  if(!entries.length){
+    el.innerHTML = '<div class="journal-empty"><div class="icon">📊</div><p>Track recurring symbols and themes across your dreams.</p></div>';
+    return;
+  }
+  const max = entries[0][1];
+  el.innerHTML = `
+    <div class="pattern-card">
+      <h4>🔮 Recurring Symbols</h4>
+      ${entries.map(([name,count])=>`
+        <div class="symbol-bar">
+          <span class="name">${name}</span>
+          <div class="bar"><div class="bar-fill" style="width:${(count/max)*100}%"></div></div>
+          <span class="count">${count}</span>
+        </div>
+      `).join('')}
+    </div>
+    <div class="pattern-card" style="margin-top:12px">
+      <h4>📓 Journal Stats</h4>
+      <div style="font-size:.88rem;color:var(--text2);line-height:1.8">
+        Total dreams recorded: <strong style="color:var(--accent)">${state.dreams.length}</strong><br>
+        Unique symbols found: <strong style="color:var(--accent)">${entries.length}</strong><br>
+        Most common mood: <strong style="color:var(--accent)">${getMostCommonMood()}</strong>
+      </div>
+    </div>
+  `;
+}
+
+function getMostCommonMood(){
+  if(!state.dreams.length) return 'None';
+  const counts = {};
+  state.dreams.forEach(d => counts[d.mood] = (counts[d.mood]||0)+1);
+  return Object.entries(counts).sort((a,b)=>b[1]-a[1])[0][0];
+}
+
+// ─── Keyboard ───
+document.getElementById('dreamInput').addEventListener('keydown', e=>{
+  if(e.key==='Enter' && (e.ctrlKey||e.metaKey)){
+    e.preventDefault();
+    analyzeDream();
+  }
+});
+</script>
+</body>
+</html>
